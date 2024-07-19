@@ -34,13 +34,19 @@ public class Main {
             payloadMap.discountFilters = new String[]{Config.OFF_MIN + "-" + Config.OFF_MAX};
             payloadMap.nextId = nextId;
             payloadMap.categoryFilter = new Main().convertToCSV(Config.CategoryFilter);
-
             System.out.println(gson.toJson(payloadMap));
 
             String result = sendPost(gson.toJson(payloadMap));
-            ResponseMap responseMap = gson.fromJson(result, ResponseMap.class);
-
             System.out.println(result);
+
+            ResponseMap responseMap;
+            try {
+                responseMap = gson.fromJson(result, ResponseMap.class);
+            } catch (Exception exception) {
+                System.err.println("Error: " + exception.getMessage());
+                continue;
+            }
+
 
             if (responseMap.code != 0) {
                 System.out.println("请求失败，错误码：" + responseMap.code);
