@@ -1,8 +1,6 @@
 package xd.suka;
 
 import com.google.gson.Gson;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -16,18 +14,13 @@ import xd.suka.map.ResponseMap;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * @author Liycxc
  * Date: 2024/7/19 下午2:30
- * {"sortType": "PRICE_ASC", "priceFilters": ["0-4000"], "discountFilters": ["1-70"], "categoryFilter": "2312", "nextId": "wC+HwrQaMfX3W/j7pABLvfPVPO7bvebgRz4fXKHsmWV16XfZ"}
  */
 public class Main {
     public static String MALL_URL = "https://mall.bilibili.com/mall-magic-c/internet/c2c/v2/list";
