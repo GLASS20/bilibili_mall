@@ -45,6 +45,7 @@ public class Main {
             if (responseMap.code != 0) {
                 System.out.println("请求失败，错误码：" + responseMap.code);
                 Thread.sleep(15000);
+                continue;
             }
 
             InsideMap insideMap = responseMap.data;
