@@ -28,6 +28,9 @@ public class Main {
     public static Gson gson = new Gson();
 
     public static void main(String[] args) throws InterruptedException, IOException {
+        Config.loadConfig();
+        System.out.println(Arrays.toString(Config.KEYS));
+
         while (true) {
             PayloadMap payloadMap = new PayloadMap();
             payloadMap.priceFilters = new String[]{(int) Config.PRICE_MIN * 100 + "-" + (int) Config.PRICE_MAX * 100};
@@ -77,7 +80,7 @@ public class Main {
         }
 
         for (String s : list) {
-            if (str.contains(s)) {
+            if (str.toLowerCase().contains(s.toLowerCase())) {
                 return true;
             }
         }
