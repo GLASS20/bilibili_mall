@@ -1,12 +1,12 @@
 package xd.suka;
 
-import xd.suka.map.IDMap;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Properties;
 
 /**
@@ -19,9 +19,9 @@ public class Config {
     public static double PRICE_MIN = 40;
     public static int OFF_MIN = 0;
     public static int OFF_MAX = 60;
-    public static String[] KEYS = new String[]{"TAITO", "入梦时刻", "夜刀神十香"};
-    public static String[] BLACK_KEYS = new String[]{"展示"};
-    public static String[] CategoryFilter = new String[]{IDMap.shou_ban};
+    public static ArrayList<String> KEYS = new ArrayList<>();
+    public static ArrayList<String> BLACK_KEYS = new ArrayList<>();
+    public static ArrayList<String> CategoryFilter = new ArrayList<>();
 
     public static String getCookie() {
         try {
@@ -52,9 +52,14 @@ public class Config {
             PRICE_MIN = Double.parseDouble(priceMin);
             OFF_MAX = Integer.parseInt(offMax);
             OFF_MIN = Integer.parseInt(offMin);
-            System.arraycopy(keys, 0, KEYS, 0, keys.length);
-            System.arraycopy(blackKeys, 0, BLACK_KEYS, 0, blackKeys.length);
-            System.arraycopy(categoryFilter, 0, CategoryFilter, 0, categoryFilter.length);
+
+            KEYS.clear();
+            BLACK_KEYS.clear();
+            CategoryFilter.clear();
+
+            KEYS.addAll(Arrays.asList(keys));
+            BLACK_KEYS.addAll(Arrays.asList(blackKeys));
+            CategoryFilter.addAll(Arrays.asList(categoryFilter));
             onlyOne = onlyOne1;
         } catch (IOException e) {
             System.out.println("配置文件加载失败: " + e.getMessage());
@@ -71,9 +76,9 @@ public class Config {
             properties.setProperty("PRICE_MIN", String.valueOf(PRICE_MIN));
             properties.setProperty("OFF_MAX", String.valueOf(OFF_MAX));
             properties.setProperty("OFF_MIN", String.valueOf(OFF_MIN));
-            properties.setProperty("KEYS", String.join(",", KEYS));
-            properties.setProperty("BLACK_KEYS", String.join(",", BLACK_KEYS));
-            properties.setProperty("CATEGORY_FILTER", String.join(",", CategoryFilter));
+            properties.setProperty("KEYS", String.join(",", KEYS.toArray(new String[0])));
+            properties.setProperty("BLACK_KEYS", String.join(",", BLACK_KEYS.toArray(new String[0])));
+            properties.setProperty("CATEGORY_FILTER", String.join(",", CategoryFilter.toArray(new String[0])));
             properties.setProperty("ONLY_ONE", String.valueOf(onlyOne));
 
             properties.store(fos, null);

@@ -14,9 +14,8 @@ import xd.suka.map.ResponseMap;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author Liycxc
@@ -26,17 +25,18 @@ public class Main {
     public static String MALL_URL = "https://mall.bilibili.com/mall-magic-c/internet/c2c/v2/list";
     public static String nextId = "null";
     public static Gson gson = new Gson();
+    public static File csvFile = new File("data.csv");
 
     public static void main(String[] args) throws InterruptedException, IOException {
         Config.loadConfig();
-        System.out.println(Arrays.toString(Config.KEYS));
+        System.out.println(Config.KEYS.toString());
 
         while (true) {
             PayloadMap payloadMap = new PayloadMap();
             payloadMap.priceFilters = new String[]{(int) Config.PRICE_MIN * 100 + "-" + (int) Config.PRICE_MAX * 100};
             payloadMap.discountFilters = new String[]{Config.OFF_MIN + "-" + Config.OFF_MAX};
             payloadMap.nextId = nextId;
-            payloadMap.categoryFilter = new Main().convertToCSV(Config.CategoryFilter);
+            payloadMap.categoryFilter = convertToCSV(Config.CategoryFilter.toArray(new String[0]));
             System.out.println(gson.toJson(payloadMap));
 
             String result = sendPost(gson.toJson(payloadMap));
@@ -60,11 +60,28 @@ public class Main {
             InsideMap insideMap = responseMap.data;
             nextId = insideMap.nextId;
 
+            if (csvFile.length() == 0) {
+                FileWriter fw = new FileWriter(csvFile);
+                fw.write("商品名称,售价,市场价,折扣率,商品图片,商品链接,商品ID");
+                fw.write("\r\n");
+                fw.close();
+            }
+
             for (ItemMap item : insideMap.data) {
                 if (containsList(item.c2cItemsName, Config.KEYS, true) && !containsList(item.c2cItemsName, Config.BLACK_KEYS, false)) {
                     if (Config.onlyOne && item.totalItemsCount > 1) {
                         break;
                     }
+
+
+                    try (FileReader reader = new FileReader(csvFile, StandardCharsets.UTF_8)){
+                        if (reader.toString().contains("ID=" + item.c2cItemsId)) {
+                            break;
+                        }
+                    } catch (IOException exception) {
+                        System.err.println(exception.getMessage());
+                    }
+                    
                     printAndWrite(item);
                     break;
                 }
@@ -74,8 +91,8 @@ public class Main {
         }
     }
 
-    public static boolean containsList(String str, String[] list, boolean defaultRet)  {
-        if (list.length == 0) {
+    public static boolean containsList(String str, ArrayList<String> list, boolean defaultRet)  {
+        if (list.isEmpty()) {
             return defaultRet;
         }
 
@@ -88,7 +105,6 @@ public class Main {
     }
 
     private static void printAndWrite(ItemMap item) throws IOException {
-        File csvFile = new File("data.csv");
         if (!csvFile.exists()) {
             if (!csvFile.createNewFile()) {
                 System.out.println("Failed to create file: " + csvFile.getAbsolutePath());
@@ -96,40 +112,45 @@ public class Main {
             }
         }
 
-        double price = Double.parseDouble(item.showPrice);
-        double marketPrice = Double.parseDouble(item.showMarketPrice);
-        String discount_rate = String.format("%.2f", (price / marketPrice) * 10) + "折";
-
-        String[] data = {item.c2cItemsName, item.showPrice, item.showMarketPrice ,discount_rate, "https:" + item.detailDtoList.get(0).img ,"https://mall.bilibili.com/neul-next/index.html?page=magic-market_detail&noTitleBar=1&itemsId=" + item.c2cItemsId + "&from=market_index"};
+        String[] data = getStrings(item);
         System.out.println(Arrays.toString(data));
 
-        try{
-            if (csvFile.length() == 0) {
-                FileWriter fw = new FileWriter(csvFile);
-                fw.write("商品名称,售价,市场价,折扣率,商品图片,商品链接");
-                fw.write("\r\n");
-                fw.close();
-            }
-
+        try {
             FileOutputStream fos = new FileOutputStream(csvFile,true);
             OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
 
-            osw.write(new Main().convertToCSV(data));
+            osw.write(convertToCSV(data));
             osw.write("\r\n");
 
             osw.close();
         }catch (Exception e) {
-            e.printStackTrace();
+            System.err.println(e.getMessage());
         }
     }
 
-    public String convertToCSV(String[] data) {
-        return Stream.of(data)
-                .map(this::escapeSpecialCharacters)
-                .collect(Collectors.joining(", "));
+    private static String[] getStrings(ItemMap item) {
+        double price = Double.parseDouble(item.showPrice);
+        double marketPrice = Double.parseDouble(item.showMarketPrice);
+        String discount_rate = String.format("%.2f", (price / marketPrice) * 10) + "折";
+
+        return new String[]{item.c2cItemsName, item.showPrice, item.showMarketPrice ,discount_rate, "https:" + item.detailDtoList.get(0).img ,"https://mall.bilibili.com/neul-next/index.html?page=magic-market_detail&noTitleBar=1&itemsId=" + item.c2cItemsId + "&from=market_index", "ID=" + item.c2cItemsId};
     }
 
-    public String escapeSpecialCharacters(String data) {
+    public static String convertToCSV(String[] data) {
+        if (data == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < data.length; i++) {
+            sb.append(escapeSpecialCharacters(data[i]));
+            if (i < data.length - 1) {
+                sb.append(", ");
+            }
+        }
+        return sb.toString();
+    }
+
+    public static String escapeSpecialCharacters(String data) {
         String escapedData = data.replaceAll("\\R", " ");
         if (data.contains(",") || data.contains("\"") || data.contains("'")) {
             data = data.replace("\"", "\"\"");
@@ -137,6 +158,7 @@ public class Main {
         }
         return escapedData;
     }
+
 
     private static String sendPost(String data) {
         CloseableHttpClient httpClient = HttpClients.createDefault();
